@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  applications Application[]
+}
+
+model Application {
+  id          String    @id @default(cuid())
+  company     String
+  position    String
+  status      Status    @default(APPLIED)
+  appliedDate DateTime  @default(now())
+  lastUpdated DateTime  @updatedAt
+  notes       String?
+  jobUrl      String?
+  salaryMin   Int?
+  salaryMax   Int?
+  location    String?
+  remote      Boolean   @default(false)
+  nextFollowUp DateTime?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  interviews Interview[]
+  reminders  Reminder[]
+}
+
+model Interview {
+  id            String    @id @default(cuid())
+  applicationId String
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  round         String
+  scheduledDate DateTime
+  interviewer   String?
+  feedback      String?
+  createdAt     DateTime  @default(now())
+}
+
+model Reminder {
+  id            String    @id @default(cuid())
+  applicationId String
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reminderDate  DateTime
+  message       String
+  isSent        Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+}
+
+enum Status {
+  WISHLIST
+  APPLIED
+  SCREENING
+  INTERVIEW
+  TECHNICAL
+  OFFER
+  REJECTED
+  GHOSTED
+}
