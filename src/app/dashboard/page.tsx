@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 interface Application {
@@ -40,6 +41,8 @@ export default function DashboardPage() {
   const [selectedAppForReminder, setSelectedAppForReminder] = useState<Application | null>(null);
   const [reminderDate, setReminderDate] = useState('');
   const [reminderMessage, setReminderMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [formData, setFormData] = useState({
     company: '',
     position: '',
@@ -198,7 +201,7 @@ export default function DashboardPage() {
       });
       
       if (res.ok) {
-        toast.success('Reminder set successfully! You will receive an email notification.');
+        toast.success('Reminder set successfully!');
         setShowReminderModal(false);
         setSelectedAppForReminder(null);
         setReminderDate('');
@@ -226,6 +229,14 @@ export default function DashboardPage() {
     return colors[status] || 'bg-gray-200 text-gray-800';
   };
 
+  // Filter applications
+  const filteredApplications = applications.filter(app => {
+    const matchesSearch = app.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          app.position.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'ALL' || app.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   // Calculate stats
   const totalApplications = applications.length;
   const inProgress = applications.filter(a => a.status === 'INTERVIEW' || a.status === 'TECHNICAL' || a.status === 'SCREENING').length;
@@ -249,11 +260,13 @@ export default function DashboardPage() {
       <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">📊</span>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Job Tracker
-              </h1>
+            <div className="flex items-center gap-6">
+              <Link href="/dashboard" className="text-blue-600 font-semibold">
+                📋 List View
+              </Link>
+              <Link href="/dashboard/kanban" className="text-gray-600 hover:text-gray-900">
+                🎯 Kanban View
+              </Link>
             </div>
             <button
               onClick={handleLogout}
@@ -357,6 +370,36 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Search and Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="🔍 Search by company or position..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="ALL">All Status</option>
+              <option value="WISHLIST">📝 Wishlist</option>
+              <option value="APPLIED">📤 Applied</option>
+              <option value="SCREENING">📞 Screening</option>
+              <option value="INTERVIEW">🎯 Interview</option>
+              <option value="TECHNICAL">💻 Technical</option>
+              <option value="OFFER">🎉 Offer</option>
+              <option value="REJECTED">❌ Rejected</option>
+              <option value="GHOSTED">👻 Ghosted</option>
+            </select>
+          </div>
+        </div>
 
         {/* Form Modal */}
         {showForm && (
@@ -548,15 +591,17 @@ export default function DashboardPage() {
         )}
 
         {/* Applications List */}
-        {applications.length === 0 ? (
+        {filteredApplications.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <div className="text-6xl mb-4">📧</div>
-            <p className="text-gray-500 text-lg mb-2">No applications yet.</p>
-            <p className="text-gray-400">Click "Add Application" to start tracking your job search!</p>
+            <p className="text-gray-500 text-lg mb-2">No applications found.</p>
+            <p className="text-gray-400">
+              {searchTerm || statusFilter !== 'ALL' ? 'Try adjusting your search or filter' : 'Click "Add Application" to get started!'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {applications.map((app) => (
+            {filteredApplications.map((app) => (
               <div key={app.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 border-l-4 border-l-blue-500">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -626,21 +671,8 @@ export default function DashboardPage() {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes slideIn {
-          from { 
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
         .animate-fadeIn {
           animation: fadeIn 0.2s ease-out;
-        }
-        .animate-slideIn {
-          animation: slideIn 0.3s ease-out;
         }
       `}</style>
     </div>
