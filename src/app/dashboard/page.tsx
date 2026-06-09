@@ -43,6 +43,8 @@ export default function DashboardPage() {
   const [reminderMessage, setReminderMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [activeView, setActiveView] = useState('list');
   const [formData, setFormData] = useState({
     company: '',
     position: '',
@@ -95,17 +97,17 @@ export default function DashboardPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingApp 
+      const url = editingApp
         ? `/api/applications/${editingApp.id}`
         : '/api/applications';
       const method = editingApp ? 'PUT' : 'POST';
-      
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      
+
       if (res.ok) {
         toast.success(editingApp ? 'Application updated!' : 'Application added!');
         setShowForm(false);
@@ -147,7 +149,7 @@ export default function DashboardPage() {
       const res = await fetch(`/api/applications/${id}`, {
         method: 'DELETE'
       });
-      
+
       if (res.ok) {
         toast.success('Application deleted');
         setDeleteConfirm(null);
@@ -164,7 +166,7 @@ export default function DashboardPage() {
     try {
       const app = applications.find(a => a.id === id);
       if (!app) return;
-      
+
       const res = await fetch(`/api/applications/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -173,7 +175,7 @@ export default function DashboardPage() {
           status: newStatus
         })
       });
-      
+
       if (res.ok) {
         toast.success(`Status updated to ${newStatus}`);
         fetchApplications();
@@ -188,7 +190,7 @@ export default function DashboardPage() {
   const createReminder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAppForReminder) return;
-    
+
     try {
       const res = await fetch('/api/reminders', {
         method: 'POST',
@@ -199,7 +201,7 @@ export default function DashboardPage() {
           message: reminderMessage
         })
       });
-      
+
       if (res.ok) {
         toast.success('Reminder set successfully!');
         setShowReminderModal(false);
@@ -229,15 +231,13 @@ export default function DashboardPage() {
     return colors[status] || 'bg-gray-200 text-gray-800';
   };
 
-  // Filter applications
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          app.position.toLowerCase().includes(searchTerm.toLowerCase());
+      app.position.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  // Calculate stats
   const totalApplications = applications.length;
   const inProgress = applications.filter(a => a.status === 'INTERVIEW' || a.status === 'TECHNICAL' || a.status === 'SCREENING').length;
   const offers = applications.filter(a => a.status === 'OFFER').length;
@@ -256,24 +256,51 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b sticky top-0 z-40">
+      {/* Header with stairs icon */}
+      <nav className="bg-white shadow-lg border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-6">
-              <Link href="/dashboard" className="text-blue-600 font-semibold">
-                📋 List View
-              </Link>
-              <Link href="/dashboard/kanban" className="text-gray-600 hover:text-gray-900">
-                🎯 Kanban View
-              </Link>
+          <div className="flex justify-between items-center h-16">
+            {/* Logo with stairs icon */}
+            <div className="flex items-center gap-2">
+              {/* <span className="text-2xl">📈</span> */}
+              <span className="text-4xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg  tracking-wide">
+                CareerLog
+              </span>
+
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm text-red-600 hover:text-red-800 transition-colors font-medium"
-            >
-              Logout
-            </button>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
+                  U
+                </div>
+                <span className="text-sm font-medium text-gray-700">Account</span>
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-1 z-50">
+                  <Link
+                    href="/dashboard/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    👤 My Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  >
+                    🚪 Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>
@@ -307,7 +334,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -343,6 +370,30 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-4xl">⭐</div>
               </div>
+            </div>
+          </div>
+
+          {/* Navigation Tabs below stats */}
+          <div className="border-b border-gray-200 mb-6">
+            <div className="flex gap-6">
+              <button
+                onClick={() => setActiveView('list')}
+                className={`pb-3 px-1 text-sm font-medium transition-colors ${activeView === 'list'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                📋 List View
+              </button>
+              <button
+                onClick={() => setActiveView('kanban')}
+                className={`pb-3 px-1 text-sm font-medium transition-colors ${activeView === 'kanban'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                🎯 Kanban View
+              </button>
             </div>
           </div>
         </div>
@@ -401,6 +452,153 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Content based on active view */}
+        {activeView === 'list' ? (
+          <>
+            {filteredApplications.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                <div className="text-6xl mb-4">📧</div>
+                <p className="text-gray-500 text-lg mb-2">No applications found.</p>
+                <p className="text-gray-400">
+                  {searchTerm || statusFilter !== 'ALL' ? 'Try adjusting your search or filter' : 'Click "Add Application" to get started!'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {filteredApplications.map((app) => (
+                  <div key={app.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 border-l-4 border-l-blue-500">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <h3 className="text-xl font-bold text-gray-900">{app.company}</h3>
+                          <select
+                            value={app.status}
+                            onChange={(e) => updateStatus(app.id, e.target.value)}
+                            className={`px-2 py-1 text-xs rounded-full font-medium cursor-pointer transition-colors ${getStatusColor(app.status)}`}
+                          >
+                            <option value="WISHLIST">📝 Wishlist</option>
+                            <option value="APPLIED">📤 Applied</option>
+                            <option value="SCREENING">📞 Screening</option>
+                            <option value="INTERVIEW">🎯 Interview</option>
+                            <option value="TECHNICAL">💻 Technical</option>
+                            <option value="OFFER">🎉 Offer</option>
+                            <option value="REJECTED">❌ Rejected</option>
+                            <option value="GHOSTED">👻 Ghosted</option>
+                          </select>
+                        </div>
+                        <p className="text-gray-600 mb-2">{app.position}</p>
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                          <span>📍 {app.remote ? 'Remote' : app.location || 'Not specified'}</span>
+                          <span>📅 Applied: {new Date(app.appliedDate).toLocaleDateString()}</span>
+                          {app.jobUrl && (
+                            <a href={app.jobUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              🔗 Job Posting
+                            </a>
+                          )}
+                        </div>
+                        {app.notes && (
+                          <p className="text-gray-600 text-sm mt-2 border-l-2 border-gray-300 pl-3">{app.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => {
+                            setSelectedAppForReminder(app);
+                            setShowReminderModal(true);
+                          }}
+                          className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                        >
+                          📅 Reminder
+                        </button>
+                        <button
+                          onClick={() => handleEdit(app)}
+                          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(app.id)}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          /* Kanban View integrated */
+          <div className="overflow-x-auto">
+            <div className="flex gap-4 min-w-max pb-4">
+              {[
+                { id: 'WISHLIST', title: '📝 Wishlist', color: 'bg-gray-100' },
+                { id: 'APPLIED', title: '📤 Applied', color: 'bg-blue-100' },
+                { id: 'SCREENING', title: '📞 Screening', color: 'bg-purple-100' },
+                { id: 'INTERVIEW', title: '🎯 Interview', color: 'bg-yellow-100' },
+                { id: 'TECHNICAL', title: '💻 Technical', color: 'bg-orange-100' },
+                { id: 'OFFER', title: '🎉 Offer', color: 'bg-green-100' },
+                { id: 'REJECTED', title: '❌ Rejected', color: 'bg-red-100' },
+                { id: 'GHOSTED', title: '👻 Ghosted', color: 'bg-pink-100' },
+              ].map((column) => {
+                const columnApps = filteredApplications.filter(app => app.status === column.id);
+
+                return (
+                  <div
+                    key={column.id}
+                    className={`w-80 ${column.color} rounded-lg p-4 min-h-[500px]`}
+                  >
+                    <div className="flex justify-between items-center mb-4 pb-2 border-b-2 border-gray-300">
+                      <h3 className="font-semibold text-gray-800">{column.title}</h3>
+                      <span className="bg-white px-2 py-1 rounded-full text-sm text-gray-600">
+                        {columnApps.length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {columnApps.map((app) => (
+                        <div
+                          key={app.id}
+                          className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-all"
+                        >
+                          <h4 className="font-bold text-gray-900">{app.company}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{app.position}</p>
+                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                            <span>📍 {app.remote ? 'Remote' : app.location || 'N/A'}</span>
+                            <span>📅 {new Date(app.appliedDate).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => handleEdit(app)}
+                              className="text-xs text-blue-600 hover:text-blue-800"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(app.id)}
+                              className="text-xs text-red-600 hover:text-red-800"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {columnApps.length === 0 && (
+                        <div className="text-center text-gray-400 text-sm py-8">
+                          No applications
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Form Modal */}
         {showForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -426,7 +624,7 @@ export default function DashboardPage() {
                         type="text"
                         required
                         value={formData.company}
-                        onChange={(e) => setFormData({...formData, company: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Google, Microsoft, etc."
                       />
@@ -437,7 +635,7 @@ export default function DashboardPage() {
                         type="text"
                         required
                         value={formData.position}
-                        onChange={(e) => setFormData({...formData, position: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Frontend Developer, UX Designer, etc."
                       />
@@ -446,7 +644,7 @@ export default function DashboardPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                       <select
                         value={formData.status}
-                        onChange={(e) => setFormData({...formData, status: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="WISHLIST">📝 Wishlist</option>
@@ -464,7 +662,7 @@ export default function DashboardPage() {
                       <input
                         type="text"
                         value={formData.location}
-                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         placeholder="New York, Remote, etc."
                       />
@@ -473,7 +671,7 @@ export default function DashboardPage() {
                       <input
                         type="checkbox"
                         checked={formData.remote}
-                        onChange={(e) => setFormData({...formData, remote: e.target.checked})}
+                        onChange={(e) => setFormData({ ...formData, remote: e.target.checked })}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                       <label className="ml-2 block text-sm text-gray-700">Remote Position</label>
@@ -484,7 +682,7 @@ export default function DashboardPage() {
                     <input
                       type="url"
                       value={formData.jobUrl}
-                      onChange={(e) => setFormData({...formData, jobUrl: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, jobUrl: e.target.value })}
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="https://..."
                     />
@@ -494,7 +692,7 @@ export default function DashboardPage() {
                     <textarea
                       rows={3}
                       value={formData.notes}
-                      onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Interview notes, contact info, etc."
                     />
@@ -503,12 +701,12 @@ export default function DashboardPage() {
                     <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                       {editingApp ? 'Update' : 'Save'}
                     </button>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setShowForm(false);
                         setEditingApp(null);
-                      }} 
+                      }}
                       className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400 transition-colors"
                     >
                       Cancel
@@ -589,92 +787,7 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-
-        {/* Applications List */}
-        {filteredApplications.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <div className="text-6xl mb-4">📧</div>
-            <p className="text-gray-500 text-lg mb-2">No applications found.</p>
-            <p className="text-gray-400">
-              {searchTerm || statusFilter !== 'ALL' ? 'Try adjusting your search or filter' : 'Click "Add Application" to get started!'}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {filteredApplications.map((app) => (
-              <div key={app.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 border-l-4 border-l-blue-500">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <h3 className="text-xl font-bold text-gray-900">{app.company}</h3>
-                      <select
-                        value={app.status}
-                        onChange={(e) => updateStatus(app.id, e.target.value)}
-                        className={`px-2 py-1 text-xs rounded-full font-medium cursor-pointer transition-colors ${getStatusColor(app.status)}`}
-                      >
-                        <option value="WISHLIST">📝 Wishlist</option>
-                        <option value="APPLIED">📤 Applied</option>
-                        <option value="SCREENING">📞 Screening</option>
-                        <option value="INTERVIEW">🎯 Interview</option>
-                        <option value="TECHNICAL">💻 Technical</option>
-                        <option value="OFFER">🎉 Offer</option>
-                        <option value="REJECTED">❌ Rejected</option>
-                        <option value="GHOSTED">👻 Ghosted</option>
-                      </select>
-                    </div>
-                    <p className="text-gray-600 mb-2">{app.position}</p>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                      <span>📍 {app.remote ? 'Remote' : app.location || 'Not specified'}</span>
-                      <span>📅 Applied: {new Date(app.appliedDate).toLocaleDateString()}</span>
-                      {app.jobUrl && (
-                        <a href={app.jobUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                          🔗 Job Posting
-                        </a>
-                      )}
-                    </div>
-                    {app.notes && (
-                      <p className="text-gray-600 text-sm mt-2 border-l-2 border-gray-300 pl-3">{app.notes}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => {
-                        setSelectedAppForReminder(app);
-                        setShowReminderModal(true);
-                      }}
-                      className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-                    >
-                      📅 Reminder
-                    </button>
-                    <button
-                      onClick={() => handleEdit(app)}
-                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(app.id)}
-                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-      `}</style>
     </div>
   );
 }
