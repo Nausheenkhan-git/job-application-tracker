@@ -42,6 +42,8 @@ export default function DashboardPage() {
   const [reminderDate, setReminderDate] = useState('');
   const [reminderMessage, setReminderMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [activeView, setActiveView] = useState('list');
@@ -58,6 +60,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchApplications();
     fetchReminders();
+    fetchAnalytics();
   }, []);
 
   const fetchApplications = async () => {
@@ -73,6 +76,18 @@ export default function DashboardPage() {
       console.error('Failed to fetch applications:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      const res = await fetch('/api/analytics');
+      if (res.ok) {
+        const data = await res.json();
+        setAnalytics(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
     }
   };
 
@@ -122,6 +137,7 @@ export default function DashboardPage() {
           notes: ''
         });
         fetchApplications();
+        fetchAnalytics();
       } else {
         toast.error(editingApp ? 'Failed to update' : 'Failed to add');
       }
@@ -154,6 +170,7 @@ export default function DashboardPage() {
         toast.success('Application deleted');
         setDeleteConfirm(null);
         fetchApplications();
+        fetchAnalytics();
       } else {
         toast.error('Failed to delete');
       }
@@ -179,6 +196,7 @@ export default function DashboardPage() {
       if (res.ok) {
         toast.success(`Status updated to ${newStatus}`);
         fetchApplications();
+        fetchAnalytics();
       } else {
         toast.error('Failed to update status');
       }
@@ -260,13 +278,11 @@ export default function DashboardPage() {
       <nav className="bg-white shadow-lg border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo with stairs icon */}
+            {/* Logo */}
             <div className="flex items-center gap-2">
-              {/* <span className="text-2xl">📈</span> */}
-              <span className="text-4xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg  tracking-wide">
+              <span className="text-4xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg tracking-wide">
                 CareerLog
               </span>
-
             </div>
 
             {/* Profile Dropdown */}
@@ -276,7 +292,7 @@ export default function DashboardPage() {
                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  U
+                  P
                 </div>
                 <span className="text-sm font-medium text-gray-700">Account</span>
                 <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -308,29 +324,37 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with stats */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
             <div>
               <h2 className="text-3xl font-bold text-gray-900">My Applications</h2>
               <p className="text-gray-600 mt-1">Track and manage your job search journey</p>
             </div>
-            <button
-              onClick={() => {
-                setEditingApp(null);
-                setFormData({
-                  company: '',
-                  position: '',
-                  status: 'APPLIED',
-                  location: '',
-                  remote: false,
-                  jobUrl: '',
-                  notes: ''
-                });
-                setShowForm(!showForm);
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              + Add Application
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"
+              >
+                📊 Analytics
+              </button>
+              <button
+                onClick={() => {
+                  setEditingApp(null);
+                  setFormData({
+                    company: '',
+                    position: '',
+                    status: 'APPLIED',
+                    location: '',
+                    remote: false,
+                    jobUrl: '',
+                    notes: ''
+                  });
+                  setShowForm(!showForm);
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                + Add Application
+              </button>
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -378,19 +402,21 @@ export default function DashboardPage() {
             <div className="flex gap-6">
               <button
                 onClick={() => setActiveView('list')}
-                className={`pb-3 px-1 text-sm font-medium transition-colors ${activeView === 'list'
+                className={`pb-3 px-1 text-sm font-medium transition-colors ${
+                  activeView === 'list'
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                }`}
               >
                 📋 List View
               </button>
               <button
                 onClick={() => setActiveView('kanban')}
-                className={`pb-3 px-1 text-sm font-medium transition-colors ${activeView === 'kanban'
+                className={`pb-3 px-1 text-sm font-medium transition-colors ${
+                  activeView === 'kanban'
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                }`}
               >
                 🎯 Kanban View
               </button>
@@ -595,6 +621,99 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Modal */}
+        {showAnalytics && analytics && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Application Analytics</h3>
+                  <button
+                    onClick={() => setShowAnalytics(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                    <div className="text-sm opacity-90">Total Applications</div>
+                    <div className="text-3xl font-bold">{analytics.totalApplications}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+                    <div className="text-sm opacity-90">Response Rate</div>
+                    <div className="text-3xl font-bold">{analytics.responseRate}%</div>
+                    <div className="text-xs opacity-80">Not rejected/ghosted</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                    <div className="text-sm opacity-90">Interview Rate</div>
+                    <div className="text-3xl font-bold">{analytics.interviewRate}%</div>
+                    <div className="text-xs opacity-80">Got to interview stage</div>
+                  </div>
+                </div>
+
+                {/* Status Breakdown */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Status Breakdown</h4>
+                  <div className="space-y-3">
+                    {Object.entries(analytics.statusBreakdown).map(([status, count]) => {
+                      const percentage = Math.round((count as number / analytics.totalApplications) * 100);
+                      const colors: Record<string, string> = {
+                        WISHLIST: 'bg-gray-500',
+                        APPLIED: 'bg-blue-500',
+                        SCREENING: 'bg-purple-500',
+                        INTERVIEW: 'bg-yellow-500',
+                        TECHNICAL: 'bg-orange-500',
+                        OFFER: 'bg-green-500',
+                        REJECTED: 'bg-red-500',
+                        GHOSTED: 'bg-pink-500'
+                      };
+                      return (
+                        <div key={status}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium">{status}</span>
+                            <span>{count as number} ({percentage}%)</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`${colors[status] || 'bg-gray-500'} h-2 rounded-full transition-all duration-500`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Monthly Trend */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Monthly Applications</h4>
+                  <div className="flex items-end gap-2 h-48">
+                    {Object.entries(analytics.monthlyTrend).map(([month, count]) => {
+                      const maxCount = Math.max(...Object.values(analytics.monthlyTrend) as number[]);
+                      const height = maxCount > 0 ? (count as number / maxCount) * 100 : 0;
+                      return (
+                        <div key={month} className="flex-1 flex flex-col items-center">
+                          <div className="w-full bg-blue-100 rounded-t-lg transition-all duration-500" style={{ height: `${height}%`, minHeight: '4px' }}>
+                            <div className="w-full bg-blue-500 rounded-t-lg h-full" style={{ height: `${height}%` }} />
+                          </div>
+                          <div className="text-xs text-gray-600 mt-2 transform -rotate-45 origin-top-left">
+                            {month}
+                          </div>
+                          <div className="text-sm font-semibold mt-1">{count as number}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
