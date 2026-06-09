@@ -16,13 +16,30 @@ interface Application {
   notes: string | null;
 }
 
+interface Reminder {
+  id: string;
+  applicationId: string;
+  reminderDate: string;
+  message: string;
+  isSent: boolean;
+  application: {
+    company: string;
+    position: string;
+  };
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingApp, setEditingApp] = useState<Application | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [selectedAppForReminder, setSelectedAppForReminder] = useState<Application | null>(null);
+  const [reminderDate, setReminderDate] = useState('');
+  const [reminderMessage, setReminderMessage] = useState('');
   const [formData, setFormData] = useState({
     company: '',
     position: '',
@@ -35,6 +52,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchApplications();
+    fetchReminders();
   }, []);
 
   const fetchApplications = async () => {
@@ -50,6 +68,18 @@ export default function DashboardPage() {
       console.error('Failed to fetch applications:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReminders = async () => {
+    try {
+      const res = await fetch('/api/reminders');
+      if (res.ok) {
+        const data = await res.json();
+        setUpcomingReminders(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch reminders:', error);
     }
   };
 
@@ -152,6 +182,36 @@ export default function DashboardPage() {
     }
   };
 
+  const createReminder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAppForReminder) return;
+    
+    try {
+      const res = await fetch('/api/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicationId: selectedAppForReminder.id,
+          reminderDate: reminderDate,
+          message: reminderMessage
+        })
+      });
+      
+      if (res.ok) {
+        toast.success('Reminder set successfully! You will receive an email notification.');
+        setShowReminderModal(false);
+        setSelectedAppForReminder(null);
+        setReminderDate('');
+        setReminderMessage('');
+        fetchReminders();
+      } else {
+        toast.error('Failed to set reminder');
+      }
+    } catch (error) {
+      toast.error('Something went wrong');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       WISHLIST: 'bg-gray-200 text-gray-800',
@@ -164,20 +224,6 @@ export default function DashboardPage() {
       GHOSTED: 'bg-pink-200 text-pink-800'
     };
     return colors[status] || 'bg-gray-200 text-gray-800';
-  };
-
-  const getStatusIcon = (status: string) => {
-    const icons: Record<string, string> = {
-      WISHLIST: '📝',
-      APPLIED: '📤',
-      SCREENING: '📞',
-      INTERVIEW: '🎯',
-      TECHNICAL: '💻',
-      OFFER: '🎉',
-      REJECTED: '❌',
-      GHOSTED: '👻'
-    };
-    return icons[status] || '📌';
   };
 
   // Calculate stats
@@ -288,9 +334,33 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Upcoming Reminders Section */}
+        {upcomingReminders.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">⏰ Upcoming Reminders</h3>
+            <div className="space-y-2">
+              {upcomingReminders.map((reminder) => (
+                <div key={reminder.id} className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {reminder.application.company} - {reminder.application.position}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">{reminder.message || 'Follow up on your application'}</p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        📅 {new Date(reminder.reminderDate).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -409,7 +479,7 @@ export default function DashboardPage() {
 
         {/* Delete Confirmation Modal */}
         {deleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
               <h3 className="text-lg font-bold mb-4">Confirm Delete</h3>
               <p className="text-gray-600 mb-6">Are you sure you want to delete this application? This action cannot be undone.</p>
@@ -425,6 +495,58 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Reminder Modal */}
+        {showReminderModal && selectedAppForReminder && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-bold mb-4">Set Follow-up Reminder</h3>
+              <p className="text-gray-600 mb-4">
+                Set a reminder for <strong>{selectedAppForReminder.company}</strong> - {selectedAppForReminder.position}
+              </p>
+              <form onSubmit={createReminder} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reminder Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={reminderDate}
+                    onChange={(e) => setReminderDate(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Message (optional)</label>
+                  <textarea
+                    rows={3}
+                    value={reminderMessage}
+                    onChange={(e) => setReminderMessage(e.target.value)}
+                    placeholder="Add any specific notes for this reminder..."
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReminderModal(false);
+                      setSelectedAppForReminder(null);
+                    }}
+                    className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Set Reminder
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Applications List */}
         {applications.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
@@ -435,7 +557,7 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {applications.map((app) => (
-              <div key={app.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 border-l-4 border-l-blue-500 animate-slideIn">
+              <div key={app.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 border-l-4 border-l-blue-500">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -471,6 +593,15 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex gap-2 ml-4">
                     <button
+                      onClick={() => {
+                        setSelectedAppForReminder(app);
+                        setShowReminderModal(true);
+                      }}
+                      className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                    >
+                      📅 Reminder
+                    </button>
+                    <button
                       onClick={() => handleEdit(app)}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
                     >
@@ -490,7 +621,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Add animation styles */}
       <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; }
