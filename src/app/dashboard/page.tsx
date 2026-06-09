@@ -103,6 +103,15 @@ export default function DashboardPage() {
     }
   };
 
+const exportData = async () => {
+  try {
+    window.open('/api/export', '_blank');
+    toast.success('Exporting your data...');
+  } catch (error) {
+    toast.error('Failed to export data');
+  }
+};
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     toast.success('Logged out successfully');
@@ -330,6 +339,12 @@ export default function DashboardPage() {
               <p className="text-gray-600 mt-1">Track and manage your job search journey</p>
             </div>
             <div className="flex gap-3">
+              <button
+  onClick={exportData}
+  className="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg"
+>
+  📥 Export CSV
+</button>
               <button
                 onClick={() => setShowAnalytics(!showAnalytics)}
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"
