@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
+
+
 
 interface Application {
   id: string;
@@ -270,17 +273,10 @@ const exportData = async () => {
   const offers = applications.filter(a => a.status === 'OFFER').length;
   const wishlist = applications.filter(a => a.status === 'WISHLIST').length;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <div className="text-gray-600">Loading your applications...</div>
-        </div>
-      </div>
-    );
-  }
-
+  
+if (loading) {
+  return <LoadingSkeleton />;
+}
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header with stairs icon */}
