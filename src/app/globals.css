@@ -1,7 +1,91 @@
 @import "tailwindcss";
 
-@layer base {
-  body {
-    background-color: #f9fafb;
-  }
+:root {
+  color-scheme: light dark;
+}
+
+html {
+  background-color: rgb(249 250 251);
+}
+
+html.dark {
+  background-color: rgb(17 24 39);
+}
+
+body {
+  background-color: rgb(249 250 251);
+  color: rgb(17 24 39);
+  transition-property: color, background-color, border-color, box-shadow, backdrop-filter;
+  transition-duration: 200ms;
+}
+
+html.dark body {
+  background-color: rgb(17 24 39);
+  color: rgb(255 255 255);
+}
+
+.card {
+  background-color: rgb(255 255 255);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transition-property: color, background-color, border-color, box-shadow, backdrop-filter;
+  transition-duration: 200ms;
+}
+
+html.dark .card {
+  background-color: rgb(31 41 55);
+}
+
+.card-hover {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 200ms;
+}
+
+.card-hover:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.input {
+  background-color: rgb(255 255 255);
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.5rem;
+  color: rgb(17 24 39);
+}
+
+html.dark .input {
+  background-color: rgb(55 65 81);
+  border-color: rgb(75 85 99);
+  color: rgb(255 255 255);
+}
+
+.input:focus {
+  border-color: rgb(59 130 246);
+  box-shadow: 0 0 0 1px rgb(59 130 246);
+  outline: none;
+}
+
+html.dark .input:focus {
+  border-color: rgb(96 165 250);
+  box-shadow: 0 0 0 1px rgb(96 165 250);
+}
+
+.modal {
+  background-color: rgb(255 255 255);
+  border-radius: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  transition-property: color, background-color, border-color, box-shadow, backdrop-filter;
+  transition-duration: 200ms;
+}
+
+html.dark .modal {
+  background-color: rgb(31 41 55);
+}
+
+.nav-bg {
+  background-color: rgb(255 255 255 / 0.8);
+  backdrop-filter: blur(12px);
+}
+
+html.dark .nav-bg {
+  background-color: rgb(17 24 39 / 0.8);
 }

@@ -8,6 +8,7 @@ import LoadingSkeleton from '@/components/LoadingSkeleton';
 
 
 
+
 interface Application {
   id: string;
   company: string;
@@ -289,17 +290,18 @@ if (loading) {
                 CareerLog
               </span>
             </div>
-
+            
             {/* Profile Dropdown */}
             <div className="relative">
+              
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 square-lg hover:bg-gray-100 transition-colors"
               >
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  P
+                <div className="w-18 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 square-full flex items-center justify-center text-white font-semibold">
+                  <span className="text-sm font-medium text-white-700">Account</span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">Account</span>
+                
                 <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
